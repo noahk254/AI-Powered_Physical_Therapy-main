@@ -4,6 +4,14 @@ import { Clock, Target, TrendingUp, Award, Play, LogOut, Calendar, Dumbbell, Inf
 import { useAuth } from '../context/AuthContext';
 import { api, exerciseConfigs, ProgressData, exerciseDemos, ExerciseDemo, AssignedSession, Prescription } from '../services/api';
 
+// Helper function to get API URL
+const getApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:8000';
+  }
+  return '/api';
+};
+
 const PatientDashboard = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -27,8 +35,8 @@ const PatientDashboard = () => {
     try {
       const [progress, sessions, rx] = await Promise.all([
         api.getProgress(user.id, 30).catch(() => null),
-        fetch(`http://localhost:8000/patient/${user.id}/assigned-sessions`).then(r => r.json()).then(d => d.sessions || []).catch(() => []),
-        fetch(`http://localhost:8000/patient/${user.id}/prescriptions`).then(r => r.json()).then(d => d.prescriptions || []).catch(() => [])
+        fetch(`${getApiUrl()}/patient/${user.id}/assigned-sessions`).then(r => r.json()).then(d => d.sessions || []).catch(() => []),
+        fetch(`${getApiUrl()}/patient/${user.id}/prescriptions`).then(r => r.json()).then(d => d.prescriptions || []).catch(() => [])
       ]);
       setProgressData(progress);
       setAssignedSessions(sessions);

@@ -7,6 +7,14 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { api, Patient, AssignedSession } from '../services/api';
 
+// Helper function to get API URL
+const getApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:8000';
+  }
+  return '/api';
+};
+
 interface UnassignedPatient {
   id: string;
   name: string;
@@ -88,7 +96,7 @@ const DoctorDashboard = () => {
       const [patientsData, sessionsData, invitesData] = await Promise.all([
         api.getDoctorPatients(user.id),
         api.getDoctorAssignedSessions(user.id),
-        fetch(`http://localhost:8000/doctor/invites/${user.id}`).then(r => r.json())
+        fetch(`${getApiUrl()}/doctor/invites/${user.id}`).then(r => r.json())
       ]);
       setPatients(patientsData);
       setAssignedSessions(sessionsData);
@@ -103,7 +111,7 @@ const DoctorDashboard = () => {
   const generateInvite = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`http://localhost:8000/doctor/invite?doctor_id=${user.id}`, {
+      const response = await fetch(`${getApiUrl()}/doctor/invite?doctor_id=${user.id}`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -125,7 +133,7 @@ const DoctorDashboard = () => {
 
   const searchUnassignedPatients = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/doctor/search-patients?search_term=${encodeURIComponent(patientSearch)}`);
+      const response = await fetch(`${getApiUrl()}/doctor/search-patients?search_term=${encodeURIComponent(patientSearch)}`);
       const data = await response.json();
       setUnassignedPatients(data.patients || []);
     } catch (err) {
@@ -136,7 +144,7 @@ const DoctorDashboard = () => {
   const assignPatient = async (patientId: string) => {
     if (!user?.id) return;
     try {
-      await fetch(`http://localhost:8000/doctor/assign-patient?patient_id=${patientId}&doctor_id=${user.id}`, {
+      await fetch(`${getApiUrl()}/doctor/assign-patient?patient_id=${patientId}&doctor_id=${user.id}`, {
         method: 'POST'
       });
       loadData();

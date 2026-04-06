@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:8000';
+const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
+  ? 'http://localhost:8000'
+  : '/api';
 
 export interface ExerciseConfig {
   id: string;
