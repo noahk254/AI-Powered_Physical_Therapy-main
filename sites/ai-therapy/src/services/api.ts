@@ -1,29 +1,4 @@
-const API_URL = 'https://fra.cloud.appwrite.io/v1/functions/69cbbd96003c913626fb/executions';
-const APPWRITE_PROJECT_ID = '69cbb734002a168eaf59';
-
-// Helper function to make Appwrite Function calls
-async function callAppwriteFunction(method: string, path: string, body?: any): Promise<any> {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Appwrite-Project': APPWRITE_PROJECT_ID,
-    },
-    body: JSON.stringify({
-      method,
-      path,
-      body: body ? JSON.stringify(body) : undefined,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'API call failed');
-  }
-
-  const result = await response.json();
-  return result;
-}
+const API_URL = 'http://localhost:8000';
 
 export interface ExerciseConfig {
   id: string;
@@ -160,28 +135,69 @@ export interface TherapyPlan {
 
 export const api = {
   async analyzeFrame(frame: string, timestamp: number, userId: string, exerciseType: string): Promise<SessionResult> {
-    return callAppwriteFunction('POST', '/upload', {
-      frame,
-      timestamp,
-      user_id: userId,
-      exercise_type: exerciseType,
+    const response = await fetch(`${API_URL}/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        frame,
+        timestamp,
+        user_id: userId,
+        exercise_type: exerciseType,
+      }),
     });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Frame analysis failed');
+    }
+
+    return response.json();
   },
 
   async startSession(userId: string, exerciseType: string): Promise<{ session_id: string }> {
-    return callAppwriteFunction('POST', `/session/start?user_id=${userId}&exercise_type=${exerciseType}`);
+    const response = await fetch(`${API_URL}/session/start?user_id=${userId}&exercise_type=${exerciseType}`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to start session');
+    }
+
+    return response.json();
   },
 
   async endSession(sessionId: string): Promise<SessionSummary> {
-    return callAppwriteFunction('POST', '/session/end', { session_id: sessionId });
+    const response = await fetch(`${API_URL}/session/end`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to end session');
+    }
+
+    return response.json();
   },
 
   async getProgress(userId: string, days: number = 30): Promise<ProgressData> {
-    return callAppwriteFunction('GET', `/progress/${userId}?days=${days}`);
+    const response = await fetch(`${API_URL}/progress/${userId}?days=${days}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to get progress');
+    }
+
+    return response.json();
   },
 
   async getExercises(): Promise<{ exercises: string[]; total: number }> {
-    return callAppwriteFunction('GET', '/exercises');
+    const response = await fetch(`${API_URL}/exercises`);
+
+    if (!response.ok) {
+      throw new Error('Failed to get exercises');
+    }
+
+    return response.json();
   },
 
   async getScheduledExercises(userId: string): Promise<ScheduledExercise[]> {
@@ -195,30 +211,64 @@ export const api = {
   },
 
   async scheduleExercise(userId: string, exerciseType: string, date: string, time: string): Promise<ScheduledExercise> {
-    return callAppwriteFunction('POST', '/schedule', {
-      user_id: userId,
-      exercise_type: exerciseType,
-      scheduled_date: date,
-      scheduled_time: time,
+    const response = await fetch(`${API_URL}/schedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        exercise_type: exerciseType,
+        scheduled_date: date,
+        scheduled_time: time,
+      }),
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to schedule exercise');
+    }
+
+    return response.json();
   },
 
   async completeScheduledExercise(scheduleId: string): Promise<void> {
-    return callAppwriteFunction('POST', `/schedule/${scheduleId}/complete`);
+    const response = await fetch(`${API_URL}/schedule/${scheduleId}/complete`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete scheduled exercise');
+    }
   },
 
   async getDoctorPatients(doctorId: string): Promise<Patient[]> {
-    const result = await callAppwriteFunction('GET', `/doctor/patients?doctor_id=${doctorId}`);
-    return result.patients;
+    const response = await fetch(`${API_URL}/doctor/patients?doctor_id=${doctorId}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to get patients');
+    }
+
+    const data = await response.json();
+    return data.patients;
   },
 
   async getPatientReport(patientId: string, doctorId: string): Promise<PatientReport> {
-    return callAppwriteFunction('GET', `/doctor/patient/${patientId}/report?doctor_id=${doctorId}`);
+    const response = await fetch(`${API_URL}/doctor/patient/${patientId}/report?doctor_id=${doctorId}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to get patient report');
+    }
+
+    return response.json();
   },
 
   async getDoctorAssignedSessions(doctorId: string): Promise<AssignedSession[]> {
-    const result = await callAppwriteFunction('GET', `/doctor/assigned-sessions/${doctorId}`);
-    return result.sessions;
+    const response = await fetch(`${API_URL}/doctor/assigned-sessions/${doctorId}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to get assigned sessions');
+    }
+
+    const data = await response.json();
+    return data.sessions;
   },
 
   async createAssignedSession(
@@ -229,22 +279,44 @@ export const api = {
     scheduledTime: string,
     notes?: string
   ): Promise<{ session_id: string }> {
-    return callAppwriteFunction('POST', '/doctor/assigned-session', {
-      patient_id: patientId,
-      doctor_id: doctorId,
-      exercise_type: exerciseType,
-      scheduled_date: scheduledDate,
-      scheduled_time: scheduledTime,
-      notes: notes || '',
+    const formData = new FormData();
+    formData.append('patient_id', patientId);
+    formData.append('doctor_id', doctorId);
+    formData.append('exercise_type', exerciseType);
+    formData.append('scheduled_date', scheduledDate);
+    formData.append('scheduled_time', scheduledTime);
+    if (notes) formData.append('notes', notes);
+
+    const response = await fetch(`${API_URL}/doctor/assigned-session`, {
+      method: 'POST',
+      body: formData,
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to create assigned session');
+    }
+
+    return response.json();
   },
 
   async completeAssignedSession(sessionId: string): Promise<void> {
-    return callAppwriteFunction('POST', `/doctor/assigned-session/${sessionId}/complete`);
+    const response = await fetch(`${API_URL}/doctor/assigned-session/${sessionId}/complete`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to complete session');
+    }
   },
 
   async deleteAssignedSession(sessionId: string): Promise<void> {
-    return callAppwriteFunction('DELETE', `/doctor/assigned-session/${sessionId}`);
+    const response = await fetch(`${API_URL}/doctor/assigned-session/${sessionId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete session');
+    }
   },
 
   async getPatientPrescriptions(patientId: string): Promise<Prescription[]> {
@@ -309,24 +381,33 @@ export const api = {
     exercises: string[],
     durationWeeks: number
   ): Promise<{ plan_id: string }> {
-    return callAppwriteFunction('POST', '/doctor/therapy-plan', {
-      patient_id: patientId,
-      doctor_id: doctorId,
-      title,
-      description,
-      exercises: JSON.stringify(exercises),
-      duration_weeks: durationWeeks,
+    const formData = new FormData();
+    formData.append('patient_id', patientId);
+    formData.append('doctor_id', doctorId);
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('exercises', JSON.stringify(exercises));
+    formData.append('duration_weeks', durationWeeks.toString());
+
+    const response = await fetch(`${API_URL}/doctor/therapy-plan`, {
+      method: 'POST',
+      body: formData,
     });
+
+    if (!response.ok) {
+      throw new Error('Failed to create therapy plan');
+    }
+
+    return response.json();
   },
 
   async checkHealth(): Promise<{ status: string; services: { pose_analyzer: boolean; database: boolean } }> {
-    return callAppwriteFunction('GET', '/health');
+    const response = await fetch(`${API_URL}/health`);
+    return response.json();
   },
 
-  createWebSocket(userId: string): WebSocket | null {
-    // WebSocket not available with Appwrite Functions
-    // Return null for now - can be implemented with Appwrite Realtime later
-    return null;
+  createWebSocket(userId: string): WebSocket {
+    return new WebSocket(`ws://localhost:8000/ws/${userId}`);
   },
 };
 

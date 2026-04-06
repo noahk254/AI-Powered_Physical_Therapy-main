@@ -1,0 +1,46 @@
+{
+    "projectId": "69cbb734002a168eaf59",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "functions": [
+        {
+            "$id": "69cbbd96003c913626fb",
+            "name": "AI-Powered_Physical_Therapy-main",
+            "enabled": true,
+            "logging": true,
+            "runtime": "python-3.12",
+            "path": "functions/api",
+            "entrypoint": "main.py",
+            "commands": "",
+            "timeout": 15,
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "vars": {},
+            "events": [],
+            "schedule": ""
+        }
+    ],
+    "sites": [
+        {
+            "$id": "69cbd0d900232fc81ceb",
+            "name": "Therapy-AI-Site",
+            "enabled": true,
+            "logging": true,
+            "framework": "react",
+            "timeout": 30,
+            "installCommand": "npm install",
+            "buildCommand": "npm run build",
+            "outputDirectory": "dist",
+            "buildRuntime": "node-22",
+            "adapter": "static",
+            "fallbackFile": "index.html",
+            "path": ".",
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb"
+        }
+    ],
+    "databases": [],
+    "collections": [],
+    "buckets": [],
+    "teams": [],
+    "topics": []
+}

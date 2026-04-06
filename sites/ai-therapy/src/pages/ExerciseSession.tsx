@@ -67,42 +67,17 @@ const ExerciseSession = () => {
 
   const startCamera = async () => {
     try {
-      // Check if we're on a mobile device
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      const constraints = {
-        video: {
-          facingMode: 'user',
-          width: { ideal: isMobile ? 640 : 640 },
-          height: { ideal: isMobile ? 480 : 480 },
-          frameRate: { ideal: 30, max: 30 }
-        },
-        audio: false
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user', width: 640, height: 480 } 
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Ensure video plays on mobile
-        videoRef.current.play();
       }
       setError(null);
     } catch (err) {
+      setError('Camera access denied. Please enable camera permissions.');
       console.error('Camera error:', err);
-      if (err instanceof Error) {
-        if (err.name === 'NotAllowedError') {
-          setError('Camera access denied. Please enable camera permissions and refresh the page.');
-        } else if (err.name === 'NotFoundError') {
-          setError('No camera found. Please connect a camera and try again.');
-        } else if (err.name === 'NotReadableError') {
-          setError('Camera is already in use by another application.');
-        } else {
-          setError(`Camera error: ${err.message}`);
-        }
-      } else {
-        setError('Camera access failed. Please check your browser settings.');
-      }
     }
   };
 
@@ -260,7 +235,7 @@ const ExerciseSession = () => {
           <div className="flex items-center space-x-4">
             <button 
               onClick={() => navigate('/dashboard')}
-              className="flex items-center space-x-2 text-gray-300 hover:text-white touch-manipulation"
+              className="flex items-center space-x-2 text-gray-300 hover:text-white"
             >
               <ArrowLeft className="h-5 w-5" />
               <span>Back</span>
@@ -283,36 +258,25 @@ const ExerciseSession = () => {
           <div className="lg:col-span-2 space-y-4">
             <div className="relative aspect-video bg-gray-800 rounded-xl overflow-hidden">
               {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-red-900/50 p-4">
-                  <div className="text-center max-w-sm">
+                <div className="absolute inset-0 flex items-center justify-center bg-red-900/50">
+                  <div className="text-center p-6">
                     <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-                    <p className="text-red-300 text-sm leading-relaxed">{error}</p>
-                    {error.includes('camera') && (
-                      <div className="mt-4 text-left text-xs text-gray-300 space-y-2">
-                        <p><strong>Troubleshooting:</strong></p>
-                        <ul className="list-disc list-inside space-y-1">
-                          <li>Ensure camera permissions are granted</li>
-                          <li>Try refreshing the page</li>
-                          <li>Check if another app is using the camera</li>
-                          <li>On mobile: ensure you're using HTTPS</li>
-                        </ul>
-                      </div>
-                    )}
+                    <p className="text-red-300">{error}</p>
                   </div>
                 </div>
               )}
               
               {!isActive ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
-                  <div className="text-center max-w-sm">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-700 rounded-full flex items-center justify-center mb-4 mx-auto">
-                      <Play className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                      <Play className="h-10 w-10 text-gray-400" />
                     </div>
-                    <p className="text-gray-400 mb-4 text-sm sm:text-base">Click Start to begin AI-powered analysis</p>
+                    <p className="text-gray-400 mb-4">Click Start to begin AI-powered analysis</p>
                     <button 
                       onClick={handleStart}
                       disabled={isLoading || !user}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 sm:px-8 sm:py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? 'Starting...' : user ? 'Start Session' : 'Please login first'}
                     </button>
@@ -329,41 +293,41 @@ const ExerciseSession = () => {
                   />
                   
                   {isConnected && (
-                    <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-green-500 px-2 py-1 sm:px-4 sm:py-2 rounded-full font-medium flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
-                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse" />
+                    <div className="absolute top-4 left-4 bg-green-500 px-4 py-2 rounded-full font-medium flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
                       <span>AI Tracking Active</span>
                     </div>
                   )}
 
-                  <div className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-black/50 backdrop-blur-sm px-3 py-1.5 sm:px-6 sm:py-3 rounded-xl">
-                    <div className="text-2xl sm:text-4xl font-bold">{count}/{config?.reps || 15}</div>
-                    <div className="text-gray-300 text-xs sm:text-sm">Reps</div>
+                  <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-6 py-3 rounded-xl">
+                    <div className="text-4xl font-bold">{count}/{config?.reps || 15}</div>
+                    <div className="text-gray-300 text-sm">Reps</div>
                   </div>
 
-                  <div className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-black/50 backdrop-blur-sm px-3 py-1.5 sm:px-6 sm:py-3 rounded-xl">
-                    <div className="text-lg sm:text-2xl font-bold text-green-400">{score}%</div>
-                    <div className="text-gray-300 text-xs sm:text-sm">Form Score</div>
+                  <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm px-6 py-3 rounded-xl">
+                    <div className="text-2xl font-bold text-green-400">{score}%</div>
+                    <div className="text-gray-300 text-sm">Form Score</div>
                   </div>
 
-                  <div className={`absolute bottom-2 right-2 sm:bottom-4 sm:right-4 px-3 py-1.5 sm:px-6 sm:py-3 rounded-xl backdrop-blur-sm text-xs sm:text-sm ${
+                  <div className={`absolute bottom-4 right-4 px-6 py-3 rounded-xl backdrop-blur-sm ${
                     score >= 80 ? 'bg-green-500/80' : score >= 60 ? 'bg-yellow-500/80' : score > 0 ? 'bg-red-500/80' : 'bg-gray-500/80'
                   }`}>
-                    <div className="flex items-center space-x-1 sm:space-x-2">
+                    <div className="flex items-center space-x-2">
                       {score >= 80 ? (
-                        <CheckCircle className="h-3 w-3 sm:h-5 sm:w-5" />
+                        <CheckCircle className="h-5 w-5" />
                       ) : score > 0 ? (
-                        <AlertCircle className="h-3 w-3 sm:h-5 sm:w-5" />
+                        <AlertCircle className="h-5 w-5" />
                       ) : null}
                       <span className="font-medium">{feedback}</span>
                     </div>
                   </div>
 
                   {currentResult?.corrections && currentResult.corrections.length > 0 && score < 80 && (
-                    <div className="absolute top-12 left-2 right-2 sm:top-16 sm:left-4 sm:right-4 bg-black/70 backdrop-blur-sm px-3 py-2 sm:px-4 sm:py-3 rounded-xl">
-                      <div className="text-xs sm:text-sm text-yellow-300 font-medium mb-1 sm:mb-2">Corrections:</div>
-                      <ul className="text-xs sm:text-sm text-yellow-200 space-y-0.5 sm:space-y-1">
+                    <div className="absolute top-16 left-4 right-4 bg-black/70 backdrop-blur-sm px-4 py-3 rounded-xl">
+                      <div className="text-sm text-yellow-300 font-medium mb-2">Corrections:</div>
+                      <ul className="text-sm text-yellow-200 space-y-1">
                         {currentResult.corrections.map((correction, idx) => (
-                          <li key={idx} className="flex items-start space-x-1 sm:space-x-2">
+                          <li key={idx} className="flex items-start space-x-2">
                             <span className="text-yellow-400">•</span>
                             <span>{correction}</span>
                           </li>
@@ -374,8 +338,8 @@ const ExerciseSession = () => {
 
                   {repComplete && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="bg-white/20 backdrop-blur-sm px-6 py-3 sm:px-8 sm:py-4 rounded-xl animate-pulse">
-                        <span className="text-3xl sm:text-4xl font-bold">+1</span>
+                      <div className="bg-white/20 backdrop-blur-sm px-8 py-4 rounded-xl animate-pulse">
+                        <span className="text-4xl font-bold">+1</span>
                       </div>
                     </div>
                   )}
@@ -384,10 +348,10 @@ const ExerciseSession = () => {
             </div>
 
             {isActive && (
-              <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <div className="flex items-center justify-center space-x-4">
                 <button 
                   onClick={handleRestart}
-                  className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-lg transition-colors touch-manipulation min-h-[44px]"
+                  className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-lg transition-colors"
                 >
                   <RotateCcw className="h-5 w-5" />
                   <span>Restart</span>
@@ -396,7 +360,7 @@ const ExerciseSession = () => {
                 {isPaused ? (
                   <button 
                     onClick={handleResume}
-                    className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-green-600 hover:bg-green-700 px-6 py-3 sm:px-8 rounded-lg transition-colors touch-manipulation min-h-[44px]"
+                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 px-8 py-3 rounded-lg transition-colors"
                   >
                     <Play className="h-5 w-5" />
                     <span>Resume</span>
@@ -404,7 +368,7 @@ const ExerciseSession = () => {
                 ) : (
                   <button 
                     onClick={handlePause}
-                    className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-yellow-600 hover:bg-yellow-700 px-6 py-3 sm:px-8 rounded-lg transition-colors touch-manipulation min-h-[44px]"
+                    className="flex items-center space-x-2 bg-yellow-600 hover:bg-yellow-700 px-8 py-3 rounded-lg transition-colors"
                   >
                     <Pause className="h-5 w-5" />
                     <span>Pause</span>
@@ -413,7 +377,7 @@ const ExerciseSession = () => {
                 
                 <button 
                   onClick={handleEnd}
-                  className="w-full sm:w-auto bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg transition-colors touch-manipulation min-h-[44px]"
+                  className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg transition-colors"
                 >
                   End Session
                 </button>
@@ -422,7 +386,7 @@ const ExerciseSession = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="bg-gray-800 rounded-xl p-4 sm:p-6">
+            <div className="bg-gray-800 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4">Exercise Details</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -444,7 +408,7 @@ const ExerciseSession = () => {
               </div>
             </div>
 
-            <div className="bg-gray-800 rounded-xl p-4 sm:p-6">
+            <div className="bg-gray-800 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4">AI Analysis</h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -466,7 +430,7 @@ const ExerciseSession = () => {
               </div>
             </div>
 
-            <div className="bg-gray-800 rounded-xl p-4 sm:p-6">
+            <div className="bg-gray-800 rounded-xl p-6">
               <h2 className="text-lg font-semibold mb-4">Tips</h2>
               <ul className="space-y-2 text-gray-300">
                 <li className="flex items-start space-x-2">

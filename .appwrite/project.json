@@ -1,0 +1,19 @@
+{
+  "projectId": "69cbd0c14ee4ee5de252",
+  "projectName": "TherapyAI",
+  "version": "1.0.0",
+  "exchange": "",
+  "variables": {},
+  "collections": [],
+  "buckets": [],
+  "functions": [],
+  "sites": [
+    {
+      "$id": "therapy-frontend",
+      "name": "Therapy Frontend",
+      "domain": "",
+      "status": "active",
+      "enabled": true
+    }
+  ]
+}

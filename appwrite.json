@@ -1,0 +1,107 @@
+{
+    "projectId": "69cbb734002a168eaf59",
+    "projectName": "Appwrite Project",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "settings": {
+        "services": {
+            "account": true,
+            "avatars": true,
+            "databases": true,
+            "locale": true,
+            "health": true,
+            "storage": true,
+            "teams": true,
+            "users": true,
+            "sites": true,
+            "functions": true,
+            "graphql": true,
+            "messaging": true
+        },
+        "auth": {
+            "methods": {
+                "jwt": true,
+                "phone": true,
+                "invites": true,
+                "anonymous": true,
+                "email-otp": true,
+                "magic-url": true,
+                "email-password": true
+            },
+            "security": {
+                "duration": 31536000,
+                "limit": 0,
+                "sessionsLimit": 10,
+                "passwordHistory": 0,
+                "passwordDictionary": false,
+                "personalDataCheck": false,
+                "sessionAlerts": false,
+                "mockNumbers": []
+            }
+        }
+    },
+    "functions": [
+        {
+            "$id": "69cbbd96003c913626fb",
+            "name": "AI-Powered_Physical_Therapy-main",
+            "runtime": "python-ml-3.11",
+            "path": "functions/AI-Powered_Physical_Therapy-main",
+            "entrypoint": "main.py",
+            "execute": [],
+            "enabled": true,
+            "logging": true,
+            "events": [],
+            "schedule": "",
+            "timeout": 15,
+            "commands": "pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir mediapipe==0.10.11",
+            "scopes": [],
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
+        }
+    ],
+    "sites": [
+        {
+            "$id": "69cbb84f000c17106d75",
+            "name": "AI-Powered_Physical_Therapy-main",
+            "path": "sites/AI-Powered_Physical_Therapy-main",
+            "framework": "react",
+            "enabled": true,
+            "logging": true,
+            "timeout": 30,
+            "buildRuntime": "node-22",
+            "adapter": "static",
+            "installCommand": "npm install",
+            "buildCommand": "npm run build",
+            "outputDirectory": "./dist",
+            "fallbackFile": "index.html",
+            "startCommand": "",
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
+        },
+        {
+            "$id": "69cbd0d900232fc81ceb",
+            "name": "AI-Powered_Physical_Therapy-main",
+            "path": "sites/AI-Powered_Physical_Therapy-main",
+            "framework": "react",
+            "enabled": true,
+            "logging": true,
+            "timeout": 30,
+            "buildRuntime": "node-22",
+            "adapter": "static",
+            "installCommand": "npm install",
+            "buildCommand": "npm run build",
+            "outputDirectory": "./dist",
+            "fallbackFile": "index.html",
+            "startCommand": "",
+            "buildSpecification": "s-0.5vcpu-512mb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
+        }
+    ],
+    "tablesDB": [],
+    "tables": [],
+    "buckets": [],
+    "teams": [],
+    "topics": []
+}
