@@ -628,10 +628,15 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         manager.disconnect(websocket)
         logger.info(f"User {user_id} disconnected")
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "TherapyAI API", "version": "1.0.0", "status": "running"}
+
 @app.get("/health")
 async def health_check():
     """
-    Health check endpoint
+    Health check endpoint - always returns 200 for Railway compatibility
     """
     try:
         pose_ready = pose_analyzer.is_ready()
