@@ -4,13 +4,14 @@ import { Clock, Target, TrendingUp, Award, Play, LogOut, Calendar, Dumbbell, Inf
 import { useAuth } from '../context/AuthContext';
 import { api, exerciseConfigs, ProgressData, exerciseDemos, ExerciseDemo, AssignedSession, Prescription } from '../services/api';
 
-// Helper function to get API URL
-const getApiUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+const API_BASE = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:8000';
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:8000';
   }
-  return '/api';
-};
+  return window.location.origin;
+})();
 
 const PatientDashboard = () => {
   const navigate = useNavigate();
@@ -35,8 +36,8 @@ const PatientDashboard = () => {
     try {
       const [progress, sessions, rx] = await Promise.all([
         api.getProgress(user.id, 30).catch(() => null),
-        fetch(`${getApiUrl()}/patient/${user.id}/assigned-sessions`).then(r => r.json()).then(d => d.sessions || []).catch(() => []),
-        fetch(`${getApiUrl()}/patient/${user.id}/prescriptions`).then(r => r.json()).then(d => d.prescriptions || []).catch(() => [])
+        fetch(`${API_BASE}/patient/${user.id}/assigned-sessions`).then(r => r.json()).then(d => d.sessions || []).catch(() => []),
+        fetch(`${API_BASE}/patient/${user.id}/prescriptions`).then(r => r.json()).then(d => d.prescriptions || []).catch(() => [])
       ]);
       setProgressData(progress);
       setAssignedSessions(sessions);

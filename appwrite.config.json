@@ -33,7 +33,7 @@
             "buildRuntime": "node-22",
             "adapter": "static",
             "fallbackFile": "index.html",
-            "path": ".",
+            "path": "sites/ai-therapy",
             "buildSpecification": "s-0.5vcpu-512mb",
             "runtimeSpecification": "s-0.5vcpu-512mb"
         }

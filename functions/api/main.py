@@ -1,3 +1,19 @@
+import json
+import base64
+import cv2
+import numpy as np
+from pose_analyzer import PoseAnalyzer
+import logging
+
+# Initialize PoseAnalyzer globally to reuse it across function calls
+pose_analyzer = None
+
+def get_pose_analyzer():
+    global pose_analyzer
+    if pose_analyzer is None:
+        pose_analyzer = PoseAnalyzer()
+    return pose_analyzer
+
 def main(context):
     """Appwrite Function for TherapyAI API"""
     try:
@@ -12,12 +28,15 @@ def main(context):
         except:
             data = {}
 
+        # Initialize analyzer
+        analyzer = get_pose_analyzer()
+
         # Route requests
         if method == 'GET' and path == '/health':
             return context.res.json({
                 "status": "healthy",
                 "services": {
-                    "pose_analyzer": True,
+                    "pose_analyzer": analyzer.is_ready(),
                     "database": True
                 },
                 "timestamp": context.req.headers.get('x-appwrite-timestamp', ''),
@@ -26,13 +45,28 @@ def main(context):
 
         elif method == 'POST' and path.startswith('/upload'):
             # Frame analysis endpoint
-            return context.res.json({
-                "is_correct": True,
-                "score": 85.5,
-                "feedback_message": "Good form! Keep your back straight.",
-                "corrections": ["Keep elbows slightly bent"],
-                "pose_landmarks": []
-            })
+            frame_base64 = data.get('frame', '')
+            exercise_type = data.get('exercise_type', 'shoulder_raises')
+            timestamp = data.get('timestamp', 0)
+            user_id = data.get('user_id', 'anonymous')
+
+            if not frame_base64:
+                return context.res.json({"error": "No frame data provided"}, 400)
+
+            # Decode base64 image
+            try:
+                image_data = base64.b64decode(frame_base64)
+                nparr = np.frombuffer(image_data, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                
+                if frame is None:
+                    return context.res.json({"error": "Invalid image data"}, 400)
+                
+                # Analyze pose
+                result = analyzer.analyze_frame(frame, exercise_type, timestamp)
+                return context.res.json(result)
+            except Exception as e:
+                return context.res.json({"error": f"Decoding error: {str(e)}"}, 400)
 
         elif method == 'POST' and path.startswith('/session/start'):
             # Start session
@@ -69,8 +103,8 @@ def main(context):
         elif method == 'GET' and path == '/exercises':
             # Get exercises
             return context.res.json({
-                "exercises": ["shoulder_raises", "arm_circles", "wall_pushups", "squats"],
-                "total": 4
+                "exercises": analyzer.get_supported_exercises(),
+                "total": len(analyzer.get_supported_exercises())
             })
 
         elif method == 'POST' and path.startswith('/schedule'):
@@ -141,8 +175,3 @@ def main(context):
         return context.res.json({
             "error": f'Internal server error: {str(e)}'
         }, 500)
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(main, host="0.0.0.0", port=8000)

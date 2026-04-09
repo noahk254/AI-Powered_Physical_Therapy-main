@@ -5,6 +5,7 @@ import Signup from './pages/Signup';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import ExerciseSession from './pages/ExerciseSession';
+import ReportPage from './pages/ReportPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <Route path="/signup" element={<Signup />} />
       <Route path="/dashboard" element={<PatientDashboard />} />
       <Route path="/doctor" element={<DoctorDashboard />} />
+      <Route path="/report/:patientId" element={<ReportPage />} />
       <Route path="/exercise/:id" element={<ExerciseSession />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

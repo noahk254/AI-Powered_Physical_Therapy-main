@@ -24,7 +24,7 @@ const Hero = () => {
             <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-6">
               AI-Powered
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-white">
-                Physical Therapy
+                Physiotherapy
               </span>
               Assistant
             </h1>

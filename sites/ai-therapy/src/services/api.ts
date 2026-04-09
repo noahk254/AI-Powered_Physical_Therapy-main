@@ -1,6 +1,36 @@
-const API_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-  ? 'http://localhost:8000'
-  : '/api';
+const API_URL = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:8000';
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  }
+  return window.location.origin;
+})();
+
+async function callBackend(method: string, path: string, body?: any): Promise<any> {
+  const headers: Record<string, string> = {};
+  let requestBody: BodyInit | undefined;
+
+  if (body instanceof FormData) {
+    requestBody = body;
+  } else if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    requestBody = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body: requestBody,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.detail || 'API call failed');
+  }
+
+  return response.json();
+}
 
 export interface ExerciseConfig {
   id: string;
@@ -135,71 +165,54 @@ export interface TherapyPlan {
   created_at: string;
 }
 
+export interface SavedReport {
+  id: number;
+  user_id: string;
+  doctor_id: string;
+  report_date: string;
+  created_at: string;
+  patient_name: string;
+  doctor_name: string;
+}
+
+export interface ImprovementTrend {
+  trend: 'improving' | 'stable' | 'declining' | 'insufficient_data' | 'error';
+  change: number;
+  first_week_avg?: number;
+  last_week_avg?: number;
+  data_points?: number;
+}
+
+export interface ComplianceRate {
+  total_scheduled: number;
+  completed: number;
+  compliance_rate: number;
+}
+
 export const api = {
   async analyzeFrame(frame: string, timestamp: number, userId: string, exerciseType: string): Promise<SessionResult> {
-    const response = await fetch(`${API_URL}/upload`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        frame,
-        timestamp,
-        user_id: userId,
-        exercise_type: exerciseType,
-      }),
+    return callBackend('POST', '/upload', {
+      frame,
+      timestamp,
+      user_id: userId,
+      exercise_type: exerciseType,
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Frame analysis failed');
-    }
-
-    return response.json();
   },
 
   async startSession(userId: string, exerciseType: string): Promise<{ session_id: string }> {
-    const response = await fetch(`${API_URL}/session/start?user_id=${userId}&exercise_type=${exerciseType}`, {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to start session');
-    }
-
-    return response.json();
+    return callBackend('POST', `/session/start?user_id=${userId}&exercise_type=${exerciseType}`);
   },
 
   async endSession(sessionId: string): Promise<SessionSummary> {
-    const response = await fetch(`${API_URL}/session/end`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to end session');
-    }
-
-    return response.json();
+    return callBackend('POST', '/session/end', { session_id });
   },
 
   async getProgress(userId: string, days: number = 30): Promise<ProgressData> {
-    const response = await fetch(`${API_URL}/progress/${userId}?days=${days}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to get progress');
-    }
-
-    return response.json();
+    return callBackend('GET', `/progress/${userId}?days=${days}`);
   },
 
   async getExercises(): Promise<{ exercises: string[]; total: number }> {
-    const response = await fetch(`${API_URL}/exercises`);
-
-    if (!response.ok) {
-      throw new Error('Failed to get exercises');
-    }
-
-    return response.json();
+    return callBackend('GET', '/exercises');
   },
 
   async getScheduledExercises(userId: string): Promise<ScheduledExercise[]> {
@@ -213,64 +226,30 @@ export const api = {
   },
 
   async scheduleExercise(userId: string, exerciseType: string, date: string, time: string): Promise<ScheduledExercise> {
-    const response = await fetch(`${API_URL}/schedule`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_id: userId,
-        exercise_type: exerciseType,
-        scheduled_date: date,
-        scheduled_time: time,
-      }),
+    return callBackend('POST', '/schedule', {
+      user_id: userId,
+      exercise_type: exerciseType,
+      scheduled_date: date,
+      scheduled_time: time,
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to schedule exercise');
-    }
-
-    return response.json();
   },
 
   async completeScheduledExercise(scheduleId: string): Promise<void> {
-    const response = await fetch(`${API_URL}/schedule/${scheduleId}/complete`, {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to complete scheduled exercise');
-    }
+    return callBackend('POST', `/schedule/${scheduleId}/complete`);
   },
 
   async getDoctorPatients(doctorId: string): Promise<Patient[]> {
-    const response = await fetch(`${API_URL}/doctor/patients?doctor_id=${doctorId}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to get patients');
-    }
-
-    const data = await response.json();
-    return data.patients;
+    const result = await callBackend('GET', `/doctor/patients?doctor_id=${doctorId}`);
+    return result.patients;
   },
 
   async getPatientReport(patientId: string, doctorId: string): Promise<PatientReport> {
-    const response = await fetch(`${API_URL}/doctor/patient/${patientId}/report?doctor_id=${doctorId}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to get patient report');
-    }
-
-    return response.json();
+    return callBackend('GET', `/doctor/patient/${patientId}/report?doctor_id=${doctorId}`);
   },
 
   async getDoctorAssignedSessions(doctorId: string): Promise<AssignedSession[]> {
-    const response = await fetch(`${API_URL}/doctor/assigned-sessions/${doctorId}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to get assigned sessions');
-    }
-
-    const data = await response.json();
-    return data.sessions;
+    const result = await callBackend('GET', `/doctor/assigned-sessions/${doctorId}`);
+    return result.sessions;
   },
 
   async createAssignedSession(
@@ -281,44 +260,22 @@ export const api = {
     scheduledTime: string,
     notes?: string
   ): Promise<{ session_id: string }> {
-    const formData = new FormData();
-    formData.append('patient_id', patientId);
-    formData.append('doctor_id', doctorId);
-    formData.append('exercise_type', exerciseType);
-    formData.append('scheduled_date', scheduledDate);
-    formData.append('scheduled_time', scheduledTime);
-    if (notes) formData.append('notes', notes);
-
-    const response = await fetch(`${API_URL}/doctor/assigned-session`, {
-      method: 'POST',
-      body: formData,
+    return callBackend('POST', '/doctor/assigned-session', {
+      patient_id: patientId,
+      doctor_id: doctorId,
+      exercise_type: exerciseType,
+      scheduled_date: scheduledDate,
+      scheduled_time: scheduledTime,
+      notes: notes || '',
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to create assigned session');
-    }
-
-    return response.json();
   },
 
   async completeAssignedSession(sessionId: string): Promise<void> {
-    const response = await fetch(`${API_URL}/doctor/assigned-session/${sessionId}/complete`, {
-      method: 'POST',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to complete session');
-    }
+    return callBackend('POST', `/doctor/assigned-session/${sessionId}/complete`);
   },
 
   async deleteAssignedSession(sessionId: string): Promise<void> {
-    const response = await fetch(`${API_URL}/doctor/assigned-session/${sessionId}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to delete session');
-    }
+    return callBackend('DELETE', `/doctor/assigned-session/${sessionId}`);
   },
 
   async getPatientPrescriptions(patientId: string): Promise<Prescription[]> {
@@ -383,33 +340,45 @@ export const api = {
     exercises: string[],
     durationWeeks: number
   ): Promise<{ plan_id: string }> {
-    const formData = new FormData();
-    formData.append('patient_id', patientId);
-    formData.append('doctor_id', doctorId);
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('exercises', JSON.stringify(exercises));
-    formData.append('duration_weeks', durationWeeks.toString());
-
-    const response = await fetch(`${API_URL}/doctor/therapy-plan`, {
-      method: 'POST',
-      body: formData,
+    return callBackend('POST', '/doctor/therapy-plan', {
+      patient_id: patientId,
+      doctor_id: doctorId,
+      title,
+      description,
+      exercises: JSON.stringify(exercises),
+      duration_weeks: durationWeeks,
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to create therapy plan');
-    }
-
-    return response.json();
   },
 
   async checkHealth(): Promise<{ status: string; services: { pose_analyzer: boolean; database: boolean } }> {
-    const response = await fetch(`${API_URL}/health`);
-    return response.json();
+    return callBackend('GET', '/health');
   },
 
-  createWebSocket(userId: string): WebSocket {
-    return new WebSocket(`ws://localhost:8000/ws/${userId}`);
+  async getReports(doctorId?: string, userId?: string): Promise<SavedReport[]> {
+    let path = '/reports?';
+    if (doctorId) path += `doctor_id=${doctorId}&`;
+    if (userId) path += `user_id=${userId}&`;
+    const result = await callBackend('GET', path);
+    return result.reports;
+  },
+
+  async getImprovementTrend(userId: string, days: number = 30): Promise<ImprovementTrend> {
+    return callBackend('GET', `/patient/${userId}/trend?days=${days}`);
+  },
+
+  async getComplianceRate(userId: string, days: number = 30): Promise<ComplianceRate> {
+    return callBackend('GET', `/patient/${userId}/compliance?days=${days}`);
+  },
+
+  createWebSocket(userId: string): WebSocket | null {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const host = window.location.hostname === 'localhost' ? 'localhost:8000' : window.location.host;
+
+    try {
+      return new WebSocket(`${protocol}://${host}/ws/${userId}`);
+    } catch {
+      return null;
+    }
   },
 };
 

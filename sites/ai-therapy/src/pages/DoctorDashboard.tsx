@@ -2,18 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, Activity, AlertTriangle, Calendar, LogOut, Search, 
-  CheckCircle, Plus, Copy, X, UserPlus, Pill, Play, Check, Trash2
+  CheckCircle, Plus, Copy, X, UserPlus, Pill, Play, Check, Trash2,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api, Patient, AssignedSession } from '../services/api';
-
-// Helper function to get API URL
-const getApiUrl = () => {
-  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    return 'http://localhost:8000';
-  }
-  return '/api';
-};
 
 interface UnassignedPatient {
   id: string;
@@ -42,6 +35,15 @@ const frequencies = [
   { value: '3_times_week', label: '3 Times per Week' },
   { value: '5_times_week', label: '5 Times per Week' },
 ];
+
+const API_BASE = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:8000';
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:8000';
+  }
+  return window.location.origin;
+})();
 
 const DoctorDashboard = () => {
   const navigate = useNavigate();
@@ -96,7 +98,7 @@ const DoctorDashboard = () => {
       const [patientsData, sessionsData, invitesData] = await Promise.all([
         api.getDoctorPatients(user.id),
         api.getDoctorAssignedSessions(user.id),
-        fetch(`${getApiUrl()}/doctor/invites/${user.id}`).then(r => r.json())
+        fetch(`${API_BASE}/doctor/invites/${user.id}`).then(r => r.json())
       ]);
       setPatients(patientsData);
       setAssignedSessions(sessionsData);
@@ -111,7 +113,7 @@ const DoctorDashboard = () => {
   const generateInvite = async () => {
     if (!user?.id) return;
     try {
-      const response = await fetch(`${getApiUrl()}/doctor/invite?doctor_id=${user.id}`, {
+      const response = await fetch(`${API_BASE}/doctor/invite?doctor_id=${user.id}`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -133,7 +135,7 @@ const DoctorDashboard = () => {
 
   const searchUnassignedPatients = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/doctor/search-patients?search_term=${encodeURIComponent(patientSearch)}`);
+      const response = await fetch(`${API_BASE}/doctor/search-patients?search_term=${encodeURIComponent(patientSearch)}`);
       const data = await response.json();
       setUnassignedPatients(data.patients || []);
     } catch (err) {
@@ -144,7 +146,7 @@ const DoctorDashboard = () => {
   const assignPatient = async (patientId: string) => {
     if (!user?.id) return;
     try {
-      await fetch(`${getApiUrl()}/doctor/assign-patient?patient_id=${patientId}&doctor_id=${user.id}`, {
+      await fetch(`${API_BASE}/doctor/assign-patient?patient_id=${patientId}&doctor_id=${user.id}`, {
         method: 'POST'
       });
       loadData();
@@ -412,6 +414,13 @@ const DoctorDashboard = () => {
                             title="Create Prescription"
                           >
                             <Pill className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => navigate(`/report/${patient.id}`)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                            title="View Report"
+                          >
+                            <FileText className="h-4 w-4" />
                           </button>
                         </div>
                       </div>

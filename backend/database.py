@@ -1029,3 +1029,154 @@ class Database:
         except Exception as e:
             logger.error(f"Error deleting session: {str(e)}")
             raise
+
+    def get_saved_reports(self, user_id: str = None, doctor_id: str = None) -> List[Dict]:
+        """Get saved progress reports"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                if user_id:
+                    cursor.execute("""
+                        SELECT pr.id, pr.user_id, pr.doctor_id, pr.report_date, pr.created_at,
+                               u.name as patient_name, d.name as doctor_name
+                        FROM progress_reports pr
+                        JOIN users u ON pr.user_id = u.id
+                        LEFT JOIN users d ON pr.doctor_id = d.id
+                        WHERE pr.user_id = ?
+                        ORDER BY pr.created_at DESC
+                    """, (user_id,))
+                elif doctor_id:
+                    cursor.execute("""
+                        SELECT pr.id, pr.user_id, pr.doctor_id, pr.report_date, pr.created_at,
+                               u.name as patient_name, d.name as doctor_name
+                        FROM progress_reports pr
+                        JOIN users u ON pr.user_id = u.id
+                        LEFT JOIN users d ON pr.doctor_id = d.id
+                        WHERE pr.doctor_id = ?
+                        ORDER BY pr.created_at DESC
+                    """, (doctor_id,))
+                else:
+                    cursor.execute("""
+                        SELECT pr.id, pr.user_id, pr.doctor_id, pr.report_date, pr.created_at,
+                               u.name as patient_name, d.name as doctor_name
+                        FROM progress_reports pr
+                        JOIN users u ON pr.user_id = u.id
+                        LEFT JOIN users d ON pr.doctor_id = d.id
+                        ORDER BY pr.created_at DESC
+                    """)
+                
+                results = cursor.fetchall()
+                return [
+                    {
+                        "id": row[0],
+                        "user_id": row[1],
+                        "doctor_id": row[2],
+                        "report_date": row[3],
+                        "created_at": row[4],
+                        "patient_name": row[5],
+                        "doctor_name": row[6]
+                    }
+                    for row in results
+                ]
+        except Exception as e:
+            logger.error(f"Error getting saved reports: {str(e)}")
+            return []
+
+    def get_report_by_id(self, report_id: int) -> Optional[Dict]:
+        """Get a specific report by ID"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT id, user_id, doctor_id, report_date, report_data, created_at
+                    FROM progress_reports
+                    WHERE id = ?
+                """, (report_id,))
+                
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        "id": row[0],
+                        "user_id": row[1],
+                        "doctor_id": row[2],
+                        "report_date": row[3],
+                        "report_data": json.loads(row[4]),
+                        "created_at": row[5]
+                    }
+                return None
+        except Exception as e:
+            logger.error(f"Error getting report by ID: {str(e)}")
+            return None
+
+    def get_improvement_trend(self, user_id: str, days: int = 30) -> Dict:
+        """Calculate improvement trend for a user"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT 
+                        DATE(timestamp) as date,
+                        AVG(score) as daily_avg
+                    FROM session_data 
+                    WHERE user_id = ? AND timestamp >= datetime('now', '-' || ? || ' days')
+                    GROUP BY DATE(timestamp)
+                    ORDER BY date ASC
+                """, (user_id, days))
+                
+                results = cursor.fetchall()
+                
+                if len(results) < 2:
+                    return {"trend": "insufficient_data", "change": 0}
+                
+                first_week_avg = sum(r[1] for r in results[:7]) / min(len(results), 7)
+                last_week_avg = sum(r[1] for r in results[-7:]) / min(len(results), 7)
+                
+                change = last_week_avg - first_week_avg
+                
+                return {
+                    "trend": "improving" if change > 5 else "stable" if abs(change) <= 5 else "declining",
+                    "change": round(change, 2),
+                    "first_week_avg": round(first_week_avg, 2),
+                    "last_week_avg": round(last_week_avg, 2),
+                    "data_points": len(results)
+                }
+        except Exception as e:
+            logger.error(f"Error calculating improvement trend: {str(e)}")
+            return {"trend": "error", "change": 0}
+
+    def get_compliance_rate(self, user_id: str, days: int = 30) -> Dict:
+        """Calculate compliance rate based on scheduled vs completed sessions"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute("""
+                    SELECT 
+                        COUNT(*) as total_scheduled
+                    FROM scheduled_exercises
+                    WHERE user_id = ? AND scheduled_date >= date('now', '-' || ? || ' days')
+                """, (user_id, days))
+                
+                total_scheduled = cursor.fetchone()[0] or 0
+                
+                cursor.execute("""
+                    SELECT 
+                        COUNT(*) as completed
+                    FROM scheduled_exercises
+                    WHERE user_id = ? AND completed = 1 AND scheduled_date >= date('now', '-' || ? || ' days')
+                """, (user_id, days))
+                
+                completed = cursor.fetchone()[0] or 0
+                
+                rate = (completed / total_scheduled * 100) if total_scheduled > 0 else 0
+                
+                return {
+                    "total_scheduled": total_scheduled,
+                    "completed": completed,
+                    "compliance_rate": round(rate, 2)
+                }
+        except Exception as e:
+            logger.error(f"Error calculating compliance rate: {str(e)}")
+            return {"total_scheduled": 0, "completed": 0, "compliance_rate": 0}

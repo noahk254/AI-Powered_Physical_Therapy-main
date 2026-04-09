@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, HTTPException, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -16,6 +17,7 @@ from pose_analyzer import PoseAnalyzer
 from database import Database
 from models import SessionData, ExerciseResult, ProgressReport
 import logging
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,8 +26,16 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="TherapyAI Backend", version="1.0.0")
 
 # CORS middleware - configure for production
-import os
-allowed_origins = os.environ.get("CORS_ORIGINS", "*").split(",")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "")
+ALLOWED_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
+
+if FRONTEND_URL:
+    allowed_origins = [FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"]
+elif ALLOWED_ORIGINS == "*":
+    allowed_origins = ["*"]
+else:
+    allowed_origins = ALLOWED_ORIGINS.split(",")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins if allowed_origins != ["*"] else ["*"],
@@ -33,6 +43,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static frontend build if exists
+frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "sites", "ai-therapy", "dist")
+if os.path.exists(frontend_dist_path):
+    app.mount("/static", StaticFiles(directory=frontend_dist_path), name="static")
 
 # Initialize components
 pose_analyzer = PoseAnalyzer()
@@ -528,6 +543,50 @@ async def delete_assigned_session(session_id: str):
         logger.error(f"Error deleting session: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/reports")
+async def get_reports(doctor_id: str = None, user_id: str = None):
+    """Get saved reports"""
+    try:
+        reports = database.get_saved_reports(user_id=user_id, doctor_id=doctor_id)
+        return {"reports": reports}
+    except Exception as e:
+        logger.error(f"Error getting reports: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/report/{report_id}")
+async def get_report(report_id: int):
+    """Get a specific report by ID"""
+    try:
+        report = database.get_report_by_id(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+        return report
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting report: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/patient/{user_id}/trend")
+async def get_improvement_trend(user_id: str, days: int = 30):
+    """Get improvement trend for a user"""
+    try:
+        trend = database.get_improvement_trend(user_id, days)
+        return trend
+    except Exception as e:
+        logger.error(f"Error getting trend: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/patient/{user_id}/compliance")
+async def get_compliance_rate(user_id: str, days: int = 30):
+    """Get compliance rate for a user"""
+    try:
+        compliance = database.get_compliance_rate(user_id, days)
+        return compliance
+    except Exception as e:
+        logger.error(f"Error getting compliance: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     """
@@ -582,6 +641,20 @@ async def health_check():
             "database": database.is_connected()
         }
     }
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("")
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    """
+    Serve frontend for all non-API routes (SPA support)
+    """
+    index_path = os.path.join(frontend_dist_path, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"error": "Frontend not built. Run 'npm run build' in sites/ai-therapy"}
 
 if __name__ == "__main__":
     import uvicorn
