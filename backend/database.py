@@ -202,6 +202,19 @@ class Database:
             logger.error(f"Error initializing database: {str(e)}")
             raise
     
+    def is_connected(self) -> bool:
+        """
+        Check if database is connected and accessible
+        """
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+            return True
+        except Exception as e:
+            logger.error(f"Database connection check failed: {str(e)}")
+            return False
+    
     def create_user(self, name: str, email: str, password_hash: str, role: str = "patient", doctor_id: Optional[str] = None) -> str:
         """
         Create a new user
