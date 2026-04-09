@@ -10,5 +10,4 @@
 **/railway.json
 **/build.sh
 **/Dockerfile
-**/dist
 !sites/ai-therapy/dist
