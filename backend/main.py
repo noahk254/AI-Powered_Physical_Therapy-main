@@ -633,12 +633,22 @@ async def health_check():
     """
     Health check endpoint
     """
+    try:
+        pose_ready = pose_analyzer.is_ready()
+    except Exception:
+        pose_ready = False
+    
+    try:
+        db_ready = database.is_connected()
+    except Exception:
+        db_ready = False
+    
     return {
-        "status": "healthy",
+        "status": "healthy" if (pose_ready and db_ready) else "degraded",
         "timestamp": datetime.now().isoformat(),
         "services": {
-            "pose_analyzer": pose_analyzer.is_ready(),
-            "database": database.is_connected()
+            "pose_analyzer": pose_ready,
+            "database": db_ready
         }
     }
 
