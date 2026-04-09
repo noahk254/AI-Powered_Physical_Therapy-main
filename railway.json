@@ -7,7 +7,8 @@
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
-    "healthcheckCommand": "curl -sf http://localhost:8000/ || true",
-    "healthcheckTimeout": 120
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 180,
+    "startupTimeout": 300
   }
 }
