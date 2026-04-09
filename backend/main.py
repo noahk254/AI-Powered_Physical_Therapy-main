@@ -48,8 +48,7 @@ app.add_middleware(
 frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "sites", "ai-therapy", "dist")
 print(f"Frontend dist path: {frontend_dist_path}")
 print(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
-if os.path.exists(frontend_dist_path):
-    app.mount("/static", StaticFiles(directory=frontend_dist_path), name="static")
+# Don't mount - we'll serve via root and catch-all endpoints
 
 # Initialize components
 pose_analyzer = PoseAnalyzer()
