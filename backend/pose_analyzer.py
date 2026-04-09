@@ -11,15 +11,26 @@ logger = logging.getLogger(__name__)
 
 class PoseAnalyzer:
     def __init__(self):
-        self.mp_pose = mp.solutions.pose
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.pose = self.mp_pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            enable_segmentation=False,
-            min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
-        )
+        self.mp_pose = None
+        self.mp_drawing = None
+        self.pose = None
+        self._initialized = False
+    
+    def _ensure_initialized(self):
+        """Lazy initialization - only load MediaPipe when actually needed"""
+        if not self._initialized:
+            logger.info("Initializing MediaPipe Pose...")
+            self.mp_pose = mp.solutions.pose
+            self.mp_drawing = mp.solutions.drawing_utils
+            self.pose = self.mp_pose.Pose(
+                static_image_mode=False,
+                model_complexity=1,
+                enable_segmentation=False,
+                min_detection_confidence=0.5,
+                min_tracking_confidence=0.5
+            )
+            self._initialized = True
+            logger.info("MediaPipe Pose initialized successfully")
         
         # Exercise definitions and thresholds
         self.exercise_configs = {
@@ -364,6 +375,8 @@ class PoseAnalyzer:
         """
         Main analysis function for a single frame
         """
+        self._ensure_initialized()
+        
         try:
             # Convert BGR to RGB
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -455,6 +468,7 @@ class PoseAnalyzer:
     
     def is_ready(self) -> bool:
         """
-        Check if the pose analyzer is ready
+        Check if the pose analyzer is ready - triggers lazy init on first check
         """
+        self._ensure_initialized()
         return self.pose is not None
