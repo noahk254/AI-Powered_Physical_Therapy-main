@@ -50,9 +50,20 @@ print(f"Frontend dist path: {frontend_dist_path}")
 print(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
 # Don't mount - we'll serve via root and catch-all endpoints
 
-# Initialize components
-pose_analyzer = PoseAnalyzer()
-database = Database()
+# Initialize components with error handling
+try:
+    pose_analyzer = PoseAnalyzer()
+    print("PoseAnalyzer initialized (lazy)")
+except Exception as e:
+    print(f"PoseAnalyzer init error: {e}")
+    pose_analyzer = None
+
+try:
+    database = Database()
+    print("Database initialized")
+except Exception as e:
+    print(f"Database init error: {e}")
+    database = None
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -642,15 +653,19 @@ async def health_check():
     """
     Health check endpoint - always returns 200 for Railway compatibility
     """
-    try:
-        pose_ready = pose_analyzer.is_ready()
-    except Exception:
-        pose_ready = False
+    pose_ready = False
+    if pose_analyzer:
+        try:
+            pose_ready = pose_analyzer.is_ready()
+        except Exception:
+            pose_ready = False
     
-    try:
-        db_ready = database.is_connected()
-    except Exception:
-        db_ready = False
+    db_ready = False
+    if database:
+        try:
+            db_ready = database.is_connected()
+        except Exception:
+            db_ready = False
     
     return {
         "status": "healthy" if (pose_ready and db_ready) else "degraded",
