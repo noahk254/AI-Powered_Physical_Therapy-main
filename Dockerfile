@@ -22,6 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 
+COPY sites/ ./sites/
+
 WORKDIR /app/sites/ai-therapy
 RUN npm ci && npm run build
 
