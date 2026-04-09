@@ -13,21 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
 
-COPY sites/ ./sites/
-
-WORKDIR /app/sites/ai-therapy
-RUN npm ci && npm run build
-
-WORKDIR /app
+COPY sites/ai-therapy/dist ./sites/ai-therapy/dist
 
 ENV PYTHONUNBUFFERED=1
 ENV CORS_ORIGINS=*
