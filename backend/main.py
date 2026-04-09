@@ -46,6 +46,8 @@ app.add_middleware(
 
 # Serve static frontend build if exists
 frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "sites", "ai-therapy", "dist")
+print(f"Frontend dist path: {frontend_dist_path}")
+print(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
 if os.path.exists(frontend_dist_path):
     app.mount("/static", StaticFiles(directory=frontend_dist_path), name="static")
 
@@ -630,7 +632,10 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
+    """Root endpoint - serves frontend"""
+    index_path = os.path.join(frontend_dist_path, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
     return {"message": "TherapyAI API", "version": "1.0.0", "status": "running"}
 
 @app.get("/health")
