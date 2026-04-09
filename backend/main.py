@@ -116,12 +116,38 @@ class RegisterRequest(BaseModel):
     invite_code: Optional[str] = None
     doctor_id: Optional[str] = None
 
-@app.get("/")
-async def root():
-    return {"message": "TherapyAI Backend API", "version": "1.0.0"}
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint - always returns 200 for Railway compatibility
+    """
+    pose_ready = False
+    if pose_analyzer:
+        try:
+            pose_ready = pose_analyzer.is_ready()
+        except Exception:
+            pose_ready = False
+    
+    db_ready = False
+    if database:
+        try:
+            db_ready = database.is_connected()
+        except Exception:
+            db_ready = False
+    
+    return {
+        "status": "healthy" if (pose_ready and db_ready) else "degraded",
+        "timestamp": datetime.now().isoformat(),
+        "services": {
+            "pose_analyzer": pose_ready,
+            "database": db_ready
+        }
+    }
+
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
 
 @app.post("/auth/register")
 async def register(request: RegisterRequest):
@@ -158,6 +184,7 @@ async def register(request: RegisterRequest):
     except Exception as e:
         logger.error(f"Registration error: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 @app.post("/auth/login")
 async def login(request: LoginRequest):
@@ -639,42 +666,6 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
         logger.info(f"User {user_id} disconnected")
-
-@app.get("/")
-async def root():
-    """Root endpoint - serves frontend"""
-    index_path = os.path.join(frontend_dist_path, "index.html")
-    if os.path.exists(index_path):
-        return FileResponse(index_path)
-    return {"message": "TherapyAI API", "version": "1.0.0", "status": "running"}
-
-@app.get("/health")
-async def health_check():
-    """
-    Health check endpoint - always returns 200 for Railway compatibility
-    """
-    pose_ready = False
-    if pose_analyzer:
-        try:
-            pose_ready = pose_analyzer.is_ready()
-        except Exception:
-            pose_ready = False
-    
-    db_ready = False
-    if database:
-        try:
-            db_ready = database.is_connected()
-        except Exception:
-            db_ready = False
-    
-    return {
-        "status": "healthy" if (pose_ready and db_ready) else "degraded",
-        "timestamp": datetime.now().isoformat(),
-        "services": {
-            "pose_analyzer": pose_ready,
-            "database": db_ready
-        }
-    }
 
 @app.get("/favicon.ico")
 async def favicon():
