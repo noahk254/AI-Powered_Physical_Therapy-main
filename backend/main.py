@@ -45,7 +45,7 @@ app.add_middleware(
 )
 
 # Serve static frontend build if exists
-frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "sites", "ai-therapy", "dist")
+frontend_dist_path = os.path.join(os.path.dirname(__file__), "sites", "ai-therapy", "dist")
 print(f"Frontend dist path: {frontend_dist_path}")
 print(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
 # Don't mount - we'll serve via root and catch-all endpoints
