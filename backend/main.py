@@ -37,12 +37,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 # Lazy imports to avoid startup failures
 cv2 = None
 np = None
 mp = None
 pose_analyzer = None
 database = None
+=======
+# Serve static frontend build if exists
+frontend_dist_path = os.path.join(os.path.dirname(__file__), "sites", "ai-therapy", "dist")
+print(f"Frontend dist path: {frontend_dist_path}")
+print(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
+# Don't mount - we'll serve via root and catch-all endpoints
+
+# Initialize components with error handling
+try:
+    pose_analyzer = PoseAnalyzer()
+    print("PoseAnalyzer initialized (lazy)")
+except Exception as e:
+    print(f"PoseAnalyzer init error: {e}")
+    pose_analyzer = None
+>>>>>>> 0c300a1fb7d5e944035d8975fe4cc9ae8b32c29b
 
 try:
     from database import Database
