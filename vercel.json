@@ -1,17 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    },
-    {
-      "src": "api/health.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    { "src": "/api/health", "dest": "/api/health.py" }
+  "framework": "react",
+  "buildCommand": "cd sites/ai-therapy && npm install && npm run build",
+  "outputDirectory": "sites/ai-therapy/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/sites/ai-therapy/dist/index.html" }
   ]
 }

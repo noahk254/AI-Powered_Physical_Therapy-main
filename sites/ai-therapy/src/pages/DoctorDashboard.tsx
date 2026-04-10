@@ -199,8 +199,10 @@ const DoctorDashboard = () => {
       setShowPrescriptionModal(false);
       setSelectedPatientForPrescription(null);
       setPrescriptionNotes('');
+      alert('Prescription created successfully!');
     } catch (err) {
       console.error('Failed to create prescription:', err);
+      alert('Failed to create prescription. Please try again.');
     }
   };
 

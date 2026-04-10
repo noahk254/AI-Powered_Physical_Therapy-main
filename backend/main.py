@@ -2,9 +2,6 @@ from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, H
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-import cv2
-import numpy as np
-import mediapipe as mp
 import json
 import base64
 import hashlib
@@ -13,13 +10,9 @@ from typing import List, Optional
 import sqlite3
 from pydantic import BaseModel
 import asyncio
-from pose_analyzer import PoseAnalyzer
-from database import Database
-from models import SessionData, ExerciseResult, ProgressReport
 import logging
 import os
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -44,26 +37,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve static frontend build if exists
-frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "sites", "ai-therapy", "dist")
-print(f"Frontend dist path: {frontend_dist_path}")
-print(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
-# Don't mount - we'll serve via root and catch-all endpoints
-
-# Initialize components with error handling
-try:
-    pose_analyzer = PoseAnalyzer()
-    print("PoseAnalyzer initialized (lazy)")
-except Exception as e:
-    print(f"PoseAnalyzer init error: {e}")
-    pose_analyzer = None
+# Lazy imports to avoid startup failures
+cv2 = None
+np = None
+mp = None
+pose_analyzer = None
+database = None
 
 try:
+    from database import Database
+    from models import SessionData, ExerciseResult, ProgressReport
     database = Database()
-    print("Database initialized")
+    logger.info("Database initialized")
 except Exception as e:
-    print(f"Database init error: {e}")
-    database = None
+    logger.warning(f"Database init error: {e}")
+
+# Don't import ML components at startup - import lazily when needed
 
 # WebSocket connection manager
 class ConnectionManager:
@@ -117,32 +106,12 @@ class RegisterRequest(BaseModel):
     doctor_id: Optional[str] = None
 
 @app.get("/health")
+@app.get("/health/")
 async def health_check():
     """
     Health check endpoint - always returns 200 for Railway compatibility
     """
-    pose_ready = False
-    if pose_analyzer:
-        try:
-            pose_ready = pose_analyzer.is_ready()
-        except Exception:
-            pose_ready = False
-    
-    db_ready = False
-    if database:
-        try:
-            db_ready = database.is_connected()
-        except Exception:
-            db_ready = False
-    
-    return {
-        "status": "healthy" if (pose_ready and db_ready) else "degraded",
-        "timestamp": datetime.now().isoformat(),
-        "services": {
-            "pose_analyzer": pose_ready,
-            "database": db_ready
-        }
-    }
+    return JSONResponse({"status": "ok", "timestamp": datetime.now().isoformat()})
 
 
 def hash_password(password: str) -> str:
@@ -205,12 +174,27 @@ async def login(request: LoginRequest):
         logger.error(f"Login error: {str(e)}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+def _get_pose_analyzer():
+    """Lazy load pose analyzer"""
+    global pose_analyzer, cv2, np
+    if pose_analyzer is None:
+        import cv2
+        import numpy as np
+        from pose_analyzer import PoseAnalyzer
+        pose_analyzer = PoseAnalyzer()
+    return pose_analyzer
+
 @app.post("/upload", response_model=FeedbackResponse)
 async def upload_frame(frame_data: FrameData):
     """
     Process a single frame for pose analysis
     """
+    global cv2, np
+    
     try:
+        import cv2
+        import numpy as np
+        
         # Decode base64 image
         image_data = base64.b64decode(frame_data.frame)
         nparr = np.frombuffer(image_data, np.uint8)
@@ -220,7 +204,8 @@ async def upload_frame(frame_data: FrameData):
             raise HTTPException(status_code=400, detail="Invalid image data")
         
         # Analyze pose
-        result = pose_analyzer.analyze_frame(
+        analyzer = _get_pose_analyzer()
+        result = analyzer.analyze_frame(
             frame, 
             frame_data.exercise_type,
             frame_data.timestamp
@@ -250,6 +235,9 @@ async def analyze_pose(frame_data: FrameData):
     """
     Analyze pose and return detailed feedback
     """
+    import cv2
+    import numpy as np
+    
     try:
         # Decode and process frame
         image_data = base64.b64decode(frame_data.frame)
@@ -257,7 +245,8 @@ async def analyze_pose(frame_data: FrameData):
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         # Get detailed analysis
-        analysis = pose_analyzer.detailed_analysis(
+        analyzer = _get_pose_analyzer()
+        analysis = analyzer.detailed_analysis(
             frame,
             frame_data.exercise_type,
             frame_data.user_id
@@ -296,9 +285,10 @@ async def get_supported_exercises():
     """
     Get list of supported exercises
     """
+    analyzer = _get_pose_analyzer()
     return {
-        "exercises": pose_analyzer.get_supported_exercises(),
-        "total": len(pose_analyzer.get_supported_exercises())
+        "exercises": analyzer.get_supported_exercises(),
+        "total": len(analyzer.get_supported_exercises())
     }
 
 class ScheduleRequest(BaseModel):
@@ -631,6 +621,9 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
     """
     WebSocket endpoint for real-time pose analysis
     """
+    import cv2
+    import numpy as np
+    
     await manager.connect(websocket)
     try:
         while True:
@@ -645,7 +638,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 
                 # Analyze pose
-                result = pose_analyzer.analyze_frame(
+                analyzer = _get_pose_analyzer()
+                result = analyzer.analyze_frame(
                     frame,
                     frame_data['exercise_type'],
                     frame_data['timestamp']
@@ -670,6 +664,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse("")
+
+frontend_dist_path = os.path.join(os.path.dirname(__file__), "..", "sites", "ai-therapy", "dist")
 
 @app.get("/{full_path:path}")
 async def serve_frontend(full_path: str):

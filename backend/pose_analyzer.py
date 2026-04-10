@@ -88,7 +88,7 @@ class PoseAnalyzer:
         """
         Extract key landmarks from MediaPipe results
         """
-        if not results.pose_landmarks:
+        if not results or not results.pose_landmarks:
             return {}
         
         landmarks = {}
@@ -378,10 +378,8 @@ class PoseAnalyzer:
         self._ensure_initialized()
         
         try:
-            # Convert BGR to RGB
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
-            # Process with MediaPipe
             results = self.pose.process(rgb_frame)
             
             if not results.pose_landmarks:
@@ -393,18 +391,14 @@ class PoseAnalyzer:
                     "pose_landmarks": None
                 }
             
-            # Extract landmarks
             landmarks = self.extract_landmarks(results, (frame.shape[0], frame.shape[1]))
             
-            # Calculate angles
             angles = self.calculate_exercise_angles(landmarks)
             
-            # Analyze exercise form
             analysis = self.analyze_exercise_form(exercise_type, angles)
             
-            # Add pose landmarks to response
             analysis["pose_landmarks"] = [
-                {"x": lm.x, "y": lm.y, "z": lm.z, "visibility": lm.visibility}
+                {"x": lm.x, "y": lm.y, "z": getattr(lm, 'z', 0), "visibility": getattr(lm, 'visibility', 1.0)}
                 for lm in results.pose_landmarks.landmark
             ]
             
@@ -468,7 +462,6 @@ class PoseAnalyzer:
     
     def is_ready(self) -> bool:
         """
-        Check if the pose analyzer is ready - triggers lazy init on first check
+        Check if the pose analyzer is ready
         """
-        self._ensure_initialized()
-        return self.pose is not None
+        return self._initialized and self.pose is not None

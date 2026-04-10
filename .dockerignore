@@ -9,5 +9,3 @@
 **/.env.local
 **/railway.json
 **/build.sh
-**/Dockerfile
-!sites/ai-therapy/dist

@@ -4,7 +4,9 @@ const API_URL = (() => {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:8000';
   }
-  return window.location.origin;
+  // Replace with your Render backend URL after deployment
+  // e.g., 'https://therapy-ai-backend.onrender.com'
+  return 'https://therapy-ai-backend.onrender.com';
 })();
 
 async function callBackend(method: string, path: string, body?: any): Promise<any> {
@@ -260,14 +262,15 @@ export const api = {
     scheduledTime: string,
     notes?: string
   ): Promise<{ session_id: string }> {
-    return callBackend('POST', '/doctor/assigned-session', {
-      patient_id: patientId,
-      doctor_id: doctorId,
-      exercise_type: exerciseType,
-      scheduled_date: scheduledDate,
-      scheduled_time: scheduledTime,
-      notes: notes || '',
-    });
+    const formData = new FormData();
+    formData.append('patient_id', patientId);
+    formData.append('doctor_id', doctorId);
+    formData.append('exercise_type', exerciseType);
+    formData.append('scheduled_date', scheduledDate);
+    formData.append('scheduled_time', scheduledTime);
+    if (notes) formData.append('notes', notes);
+
+    return callBackend('POST', '/doctor/assigned-session', formData);
   },
 
   async completeAssignedSession(sessionId: string): Promise<void> {
