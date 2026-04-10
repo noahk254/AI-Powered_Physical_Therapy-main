@@ -5,7 +5,7 @@ services:
     pythonVersion: "3.11"
     region: oregon
     buildCommand: pip install pip==25.3.1 --upgrade && pip install --no-cache-dir -r requirements.txt
-    startCommand: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000
+    startCommand: cd /opt/render/project/src/backend && python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
     envVars:
       - key: CORS_ORIGINS
         value: "*"
