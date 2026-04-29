@@ -419,6 +419,7 @@ export interface ExerciseDemo {
   tips: string[];
   commonMistakes: string[];
   muscleGroups: string[];
+  videoUrl: string;
 }
 
 export const exerciseDemos: Record<string, ExerciseDemo> = {
@@ -442,7 +443,8 @@ export const exerciseDemos: Record<string, ExerciseDemo> = {
     ],
     tips: ['Move slowly and controlled', 'Avoid swinging', 'Keep shoulders down, not up by ears', 'Breathe steadily'],
     commonMistakes: ['Raising arms too high (above 90°)', 'Swinging the arms', 'Shrugging shoulders up', 'Bending elbows significantly'],
-    muscleGroups: ['Deltoids', 'Trapezius', 'Rotator Cuff']
+    muscleGroups: ['Deltoids', 'Trapezius', 'Rotator Cuff'],
+    videoUrl: 'https://www.youtube.com/embed/03fAIRQ7G5w?rel=0'
   },
   arm_circles: {
     id: 'arm_circles',
@@ -463,7 +465,8 @@ export const exerciseDemos: Record<string, ExerciseDemo> = {
     ],
     tips: ['Start with small circles', 'Gradually increase circle size', 'Keep core stable', 'Keep shoulders down'],
     commonMistakes: ['Making circles too big too soon', 'Bending elbows', 'Using momentum instead of muscles', 'Holding breath'],
-    muscleGroups: ['Deltoids', 'Rotator Cuff', 'Trapezius']
+    muscleGroups: ['Deltoids', 'Rotator Cuff', 'Trapezius'],
+    videoUrl: 'https://www.youtube.com/embed/3STTSi_jdHk?rel=0'
   },
   wall_pushups: {
     id: 'wall_pushups',
@@ -484,7 +487,8 @@ export const exerciseDemos: Record<string, ExerciseDemo> = {
     ],
     tips: ['Keep your body straight', 'Don\'t lock elbows at top', 'Move slowly for more benefit', 'Increase difficulty by stepping closer'],
     commonMistakes: ['Letting hips sag', 'Getting too close to wall', 'Not bending elbows enough', 'Holding breath'],
-    muscleGroups: ['Pectorals', 'Triceps', 'Deltoids', 'Core']
+    muscleGroups: ['Pectorals', 'Triceps', 'Deltoids', 'Core'],
+    videoUrl: 'https://www.youtube.com/embed/5NPvv40gd3Q?rel=0'
   },
   squats: {
     id: 'squats',
@@ -506,6 +510,7 @@ export const exerciseDemos: Record<string, ExerciseDemo> = {
     ],
     tips: ['Keep weight on heels', 'Don\'t let knees cave inward', 'Look forward, not down', 'Engage core throughout'],
     commonMistakes: ['Letting knees go past toes', 'Rounding the back', 'Rising only halfway', 'Putting weight on toes'],
-    muscleGroups: ['Quadriceps', 'Glutes', 'Hamstrings', 'Core']
+    muscleGroups: ['Quadriceps', 'Glutes', 'Hamstrings', 'Core'],
+    videoUrl: 'https://www.youtube.com/embed/byxWus7BwfQ?rel=0'
   }
 };

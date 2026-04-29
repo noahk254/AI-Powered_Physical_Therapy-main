@@ -97,13 +97,17 @@ const PatientDashboard = () => {
             </div>
             
             <div className="p-6 space-y-6">
-              {/* Demo Video Placeholder */}
-              <div className="aspect-video bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center">
-                <div className="text-center">
-                  <Video className="h-16 w-16 text-indigo-400 mx-auto mb-2" />
-                  <p className="text-indigo-600 font-medium">Exercise Demo Video</p>
-                  <p className="text-sm text-indigo-400">AI will track your form</p>
-                </div>
+              {/* Demo Video */}
+              <div className="aspect-video rounded-xl overflow-hidden">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={selectedDemo.videoUrl}
+                  title={`${selectedDemo.name} Demo`}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
 
               {/* Stats */}
@@ -389,10 +393,22 @@ const PatientDashboard = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {allExercises.map(exercise => {
               const demo = getExerciseDemo(exercise.id === '1' ? 'shoulder_raises' : exercise.id === '2' ? 'arm_circles' : exercise.id === '3' ? 'wall_pushups' : 'squats');
+              const videoId = demo?.videoUrl?.match(/embed\/([a-zA-Z0-9_-]+)/)?.[1] || '';
               return (
                 <div key={exercise.id} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
-                    <Video className="h-12 w-12 text-indigo-400" />
+                  <div className="aspect-video bg-gray-100">
+                    {videoId ? (
+                      <img
+                        src={`https://img.youtube.com/vi/${videoId}/mqdefault.jpg`}
+                        alt={exercise.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="aspect-video bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+                        <Video className="h-12 w-12 text-indigo-400" />
+                      </div>
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-lg mb-1">{exercise.name}</h3>
