@@ -12,6 +12,9 @@ from pydantic import BaseModel
 import asyncio
 import logging
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -51,7 +54,10 @@ root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 frontend_dist_path = os.path.join(root_path, "sites", "ai-therapy", "dist")
 logger.info(f"Frontend dist path: {frontend_dist_path}")
 logger.info(f"Frontend exists: {os.path.exists(frontend_dist_path)}")
-# Don't mount - we'll serve via root and catch-all endpoints
+# Mount built JS/CSS assets statically (so asset URLs aren't caught by the SPA fallback)
+assets_path = os.path.join(frontend_dist_path, "assets")
+if os.path.isdir(assets_path):
+    app.mount("/assets", StaticFiles(directory=assets_path), name="assets")
 
 try:
     from database import Database

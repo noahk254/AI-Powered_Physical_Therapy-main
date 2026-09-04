@@ -26,5 +26,4 @@ dist-ssr
 backend/venv/
 backend/venv2/
 __pycache__/
-.vercel
 *.db

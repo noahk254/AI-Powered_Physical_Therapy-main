@@ -1,13 +1,4 @@
-const API_URL = (() => {
-  if (typeof window === 'undefined') return 'http://localhost:8000';
-  const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return 'http://localhost:8000';
-  }
-  // Replace with your Render backend URL after deployment
-  // e.g., 'https://therapy-ai-backend.onrender.com'
-  return 'https://therapy-ai-backend.onrender.com';
-})();
+const API_URL = 'http://localhost:8000';
 
 async function callBackend(method: string, path: string, body?: any): Promise<any> {
   const headers: Record<string, string> = {};

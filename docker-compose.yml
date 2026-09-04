@@ -1,0 +1,15 @@
+services:
+  therapy-ai:
+    build: .
+    image: therapy-ai:latest
+    container_name: therapy-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    volumes:
+      # Persist the SQLite database across container rebuilds
+      - therapy-ai-data:/app/backend/therapy_ai.db
+
+volumes:
+  therapy-ai-data:

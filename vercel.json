@@ -1,8 +1,0 @@
-{
-  "framework": "react",
-  "buildCommand": "cd sites/ai-therapy && npm install && npm run build",
-  "outputDirectory": "sites/ai-therapy/dist",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/sites/ai-therapy/dist/index.html" }
-  ]
-}

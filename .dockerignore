@@ -1,5 +1,6 @@
 **/node_modules
 **/venv
+**/venv2
 **/__pycache__
 **/.git
 **/.github
@@ -7,5 +8,7 @@
 **/*.md
 **/.env
 **/.env.local
+**/dist
 **/railway.json
 **/build.sh
+**/.agents
